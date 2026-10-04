@@ -6,7 +6,7 @@
 
 ## 安装
 
-普通用户用安装程序 `Claude娘-安装程序.exe`（在 GitHub 的 Releases 里，或者按下文“打包”自己生成）。它装在当前用户的 `%LOCALAPPDATA%\Programs\Claude娘`，不需要管理员权限，会同时：
+普通用户用安装程序 `Claude娘-安装程序.exe`（按下文“打包”自己生成，或者向作者要）。它装在当前用户的 `%LOCALAPPDATA%\Programs\Claude娘`，不需要管理员权限，会同时：
 
 - 把 Claude Code 插件装到 `%USERPROFILE%\.claude\skills\claude-buddy-bridge`；
 - 在开始菜单建快捷方式，可选桌面快捷方式；
