@@ -12,4 +12,8 @@
 - `buddy-pet/`：程序、插件、打包脚本
 - `buddy-art/`：角色图和生图提示词
 
+# Acknowledgements
+Thanks to the LINUX DO community.
+
+# License
 以 MIT 许可发布，见 [LICENSE](LICENSE)。
