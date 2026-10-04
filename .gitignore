@@ -1,0 +1,26 @@
+# 只发布桌宠本体和角色图，这个文件夹里的其他东西（参考资料、笔记、备份）不进仓库。
+/*
+!/.gitignore
+!/LICENSE
+!/README.md
+!/buddy-pet/
+!/buddy-art/
+
+# 运行时生成、每个人自己的文件
+buddy-pet/config.json
+buddy-pet/lines.json
+buddy-pet/lines.broken-*.json
+buddy-pet/met.json
+buddy-pet/sounds/
+*.log
+
+# 打包产物
+buddy-pet/build/
+buddy-pet/dist/
+
+# 备份和缓存
+_archive/
+__pycache__/
+
+# 版权属于 Mojang，只放进给朋友的安装程序，不放进源码仓库
+buddy-pet/sound-presets/minecraft-exp-orb.wav

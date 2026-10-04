@@ -1,0 +1,5 @@
+{
+  "name": "claude-buddy-bridge",
+  "version": "0.1.0",
+  "description": "把 Claude Code 的额度、上下文、花费和任务进度写成小文件，给桌宠Claude娘读取"
+}
