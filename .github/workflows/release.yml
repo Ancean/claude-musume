@@ -1,0 +1,63 @@
+# 发布新版本：在 GitHub 网页的 Actions › 发布新版本 › Run workflow 里填版本号（比如 1.1.0），
+# 或者推送一个 v1.1.0 这样的标签。它在 Windows 上打包，建一个 v<版本号> 的草稿版本，把安装程序放进去。
+# 草稿只有你看得到：下载下来装一遍确认没问题，再在 Releases 页面点“发布”。
+name: 发布新版本
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 版本号，比如 1.1.0
+        required: true
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: 打包并建草稿版本
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: buddy-pet
+    env:
+      PYTHONUTF8: "1"
+      GH_TOKEN: ${{ github.token }}
+      # 手动运行时是填的版本号，推送标签时是标签名（v1.1.0）；下一步去掉 v 存成 VERSION。
+      WANTED: ${{ inputs.version || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: 检查版本号
+        run: |
+          $version = $env:WANTED.Trim() -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "版本号要写成 1.1.0 这样，现在是：$env:WANTED" }
+          gh release view "v$version" --repo "${{ github.repository }}" 2>$null
+          if ($LASTEXITCODE -eq 0) { throw "v$version 已经有了，换一个版本号" }
+          # 查不到是正常的；Actions 会拿最后的退出码判断这一步成没成，这里清掉。
+          $global:LASTEXITCODE = 0
+          "VERSION=$version" >> $env:GITHUB_ENV
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: 安装依赖
+        run: |
+          python -m pip install -q pyinstaller PyQt5 Pillow
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      - name: 打包
+        run: |
+          python installer\build.py --version $env:VERSION
+          Copy-Item "dist\Claude娘-安装程序.exe" "dist\claude-musume-setup-$env:VERSION.exe"
+      - name: 建草稿版本
+        run: |
+          $notes = @"
+          安装方法：一直点“下一步”就可以了。Windows 第一次运行可能会弹出蓝色的“已保护你的电脑”，点“更多信息”再点“仍要运行”就行。
+
+          这个安装程序由 GitHub 自动打包，不带 Minecraft 的经验球音效（版权属于 Mojang），任务结束音默认是音效 A；想要经验球，见 README 的“声音”一节。
+          "@
+          gh release create "v$env:VERSION" "dist\claude-musume-setup-$env:VERSION.exe" `
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" --draft `
+            --title "Claude娘 $env:VERSION" --notes $notes

@@ -85,7 +85,7 @@ function save($: EngineInterface, isEnded = false): Promise<void> {
     .catch((err: unknown) => {
       if (live.isWarned) return
       live.isWarned = true
-      $.ui.toast(`claude-buddy-bridge 写不进桌宠的数据文件：${err instanceof Error ? err.message : String(err)}`)
+      $.ui.toast(`musume-bridge 写不进桌宠的数据文件：${err instanceof Error ? err.message : String(err)}`)
     })
 
   return live.queue
