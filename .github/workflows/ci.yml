@@ -55,7 +55,7 @@ jobs:
           python pet.pyw --snapshot "$RUNNER_TEMP/snapshot"
           test -s "$RUNNER_TEMP/snapshot/sheet.png"
           echo "渲染了 $(ls "$RUNNER_TEMP/snapshot" | wc -l) 张图，总览是 sheet.png。" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: snapshot
           path: ${{ runner.temp }}/snapshot
@@ -84,7 +84,7 @@ jobs:
         run: |
           python installer\build.py
           Copy-Item "dist\Claude娘-安装程序.exe" "dist\claude-musume-setup.exe"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: installer
           path: buddy-pet/dist/claude-musume-setup.exe
