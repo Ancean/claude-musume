@@ -97,7 +97,7 @@
 
 提示音是程序合成的木琴一样的柔和音色，每个音都有一点渐起，不会突然一响：点她是五声音阶里的单音，任务完成是轻轻的“叮咚”，额度重置是上行的琶音，额度告急是两个往下走的低音。音量在“设置 › 提示音 › 音量”里分小声、适中、大声三档，“试听”可以逐个听。
 
-一轮回复完成时的任务结束音在“设置 › 提示音 › 任务结束音”里选：默认是 Minecraft 的经验球音效，另一个预设是 A，也可以选回合成的“叮咚”、自选一个 wav 文件，或者选一个文件夹当音效组，每次从里面随机放一个。选中后马上试听一次。自选文件只认 wav（Windows 自带的播放只支持 PCM 格式的 wav），放不了的文件会被跳过，全都放不了时退回经验球；没有截取片段的功能，想要某一段请先用别的工具剪好。两个预设放在 `sound-presets` 文件夹，来自 [DeepSeek-Balance-Whale-Widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) 桌宠项目（MeteorNOX，MIT 许可）。经验球音效版权属于 Mojang，所以源码仓库和 GitHub 自动打包的安装程序里都不带 `minecraft-exp-orb.wav`，这时默认的任务结束音是音效 A；想要经验球的话自己把同名 wav 放进 `sound-presets` 即可。
+一轮回复完成时的任务结束音在“设置 › 提示音 › 任务结束音”里选：默认是 Minecraft 的经验球音效，另一个预设是 A，也可以选回合成的“叮咚”、自选一个 wav 文件，或者选一个文件夹当音效组，每次从里面随机放一个。选中后马上试听一次。自选文件只认 wav（Windows 自带的播放只支持 PCM 格式的 wav），放不了的文件会被跳过，全都放不了时退回经验球；没有截取片段的功能，想要某一段请先用别的工具剪好。两个预设放在 `sound-presets` 文件夹，来自 [DeepSeek-Balance-Whale-Widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) 桌宠项目（MeteorNOX，MIT 许可）。经验球音效版权属于 Mojang。`sound-presets` 里缺了 `minecraft-exp-orb.wav` 时，默认的任务结束音会退回音效 A。
 
 想换掉其他提示音，把 wav 文件放进 `sounds\自定义`（菜单里“打开自定义声音文件夹”可以直接打开），文件名用 `done.wav`（任务完成，只在任务结束音选“叮咚”时用）、`chime.wav`（额度重置）、`warn.wav`（额度告急）或 `pat.wav`（点她）；也可以用 `pat1.wav` 到 `pat5.wav` 分别替换连点时的五个音。不放就用合成的。
 
@@ -195,7 +195,7 @@ Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' 
 
 打包后的程序把设置、台词、声音和日志写在 exe 旁边，所以装在用户自己的文件夹里；角色图先找 exe 旁边的 `buddy-art`（方便换图），找不到再用打包进去的。打包版没有带 numpy 和 scipy，换进去的角色图要是透明背景的 PNG。同一个 exe 带 `--follow` 参数时只当哨兵。插件写数据的位置不受影响。
 
-也可以让 GitHub 替你打包：在仓库网页的 Actions › 发布新版本 › Run workflow 里填版本号（比如 `1.1.0`），或者推送一个 `v1.1.0` 这样的标签。它在 GitHub 的 Windows 机器上跑 `build.py --version 版本号`，建一个草稿版本，把 `claude-musume-setup-版本号.exe` 放进去。草稿只有你看得到，下载下来装一遍确认没问题，再在 Releases 页面点“发布”。这样打出来的安装程序不带经验球音效。
+也可以让 GitHub 替你打包：在仓库网页的 Actions › 发布新版本 › Run workflow 里填版本号（比如 `1.1.0`），或者推送一个 `v1.1.0` 这样的标签。它在 GitHub 的 Windows 机器上跑 `build.py --version 版本号`，建一个草稿版本，把 `claude-musume-setup-版本号.exe` 放进去。草稿只有你看得到，下载下来装一遍确认没问题，再在 Releases 页面点“发布”。
 
 ## 依赖
 
