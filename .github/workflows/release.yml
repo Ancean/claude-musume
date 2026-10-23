@@ -55,8 +55,6 @@ jobs:
         run: |
           $notes = @"
           安装方法：一直点“下一步”就可以了。Windows 第一次运行可能会弹出蓝色的“已保护你的电脑”，点“更多信息”再点“仍要运行”就行。
-
-          这个安装程序由 GitHub 自动打包，不带 Minecraft 的经验球音效（版权属于 Mojang），任务结束音默认是音效 A；想要经验球，见 README 的“声音”一节。
           "@
           gh release create "v$env:VERSION" "dist\claude-musume-setup-$env:VERSION.exe" `
             --repo "${{ github.repository }}" --target "${{ github.sha }}" --draft `

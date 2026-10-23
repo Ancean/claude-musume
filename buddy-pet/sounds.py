@@ -139,7 +139,7 @@ def done_path(folder: Path, presets: Path, choice: str, chosen: str | None) -> P
                 return random.choice(options)
     if choice == "chime":
         return path_for(folder, "done")
-    # 经验球不随源码发布（版权），缺了就退回音效 A。
+    # 经验球的文件缺了（比如被删掉）就退回音效 A。
     for key in dict.fromkeys((choice if choice in PRESETS else "exp", "a")):
         for path in (preset_file(folder, key), presets / PRESETS[key]):
             if path.exists():
