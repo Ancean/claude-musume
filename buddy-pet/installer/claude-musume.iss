@@ -34,6 +34,11 @@ Name: "chs"; MessagesFile: "{#ChineseIsl}"
 Name: "follow"; Description: "开机后常驻一个小哨兵，Claude 桌面端打开时叫她出来、关掉时她跟着退出"; GroupDescription: "启动方式："
 Name: "desktopicon"; Description: "在桌面创建快捷方式"; GroupDescription: "快捷方式："; Flags: unchecked
 
+[InstallDelete]
+; 覆盖安装时先清掉旧版的运行库：新版删掉或改名的文件不会被覆盖，不清就一直留着（比如瘦身删掉的 Qt 文件）。
+; _internal 里只有随程序打包的东西，台词、设置和声音都在它外面，不受影响。
+Type: filesandordirs; Name: "{app}\_internal"
+
 [Files]
 Source: "{#AppDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; 给 Claude Code 的插件：把额度、上下文、花费和任务进度实时写给她。改名前的旧插件 claude-buddy-bridge 由她启动时删掉（见 pet.pyw）。
