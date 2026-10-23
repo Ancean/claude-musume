@@ -298,7 +298,7 @@ LINE_KINDS = (
     ("wake", "被叫醒", "她打瞌睡时被点醒或拖醒，又没挑到见面台词时说。"),
     ("drag", "被拖起来", "开始拖她时，有 35% 的机会说。"),
     ("drop", "放下", "拖完松手时，有 30% 的机会说。"),
-    ("usage", "报额度", "她刚出来时跟在问候后面说；点她时有 30% 的机会说；闲聊时也会抽到。"),
+    ("usage", "报额度", "点她时有 30% 的机会说；闲聊时也会抽到。"),
     ("session", "报会话", "闲聊时会抽到。上下文和花费要装 Claude Code 插件才有，没有数据的句子会被跳过。"),
     ("half", "5 小时额度过半", "5 小时额度刚超过 50% 时说。"),
     ("warn", "5 小时额度告急", "5 小时额度刚超过 70% 时说，同时响提示音。"),
@@ -1525,13 +1525,12 @@ class Pet(QWidget, EdgeDock):
         return line_tags.period_of(datetime.now().hour)
 
     def greet(self) -> None:
-        """刚出来时打招呼：见面台词（见 Lines.meet）或者当前时段的问候，后面跟一句额度。"""
+        """刚出来时打招呼：只说见面台词（见 Lines.meet）或者当前时段的问候，额度看脚下的卡片。
+        找不到额度记录时例外，后面跟一句“找不到记录”，不然卡片空着她却不吭声。"""
         self.start_action("wave", WAVE_FOR)
         values = fields(self.usage, time.time())
         hello = self.lines.meet(values) or self.lines.pick(self.time_kind(), values)
-        info = None
-        if self.usage.missing or self.usage.known():
-            info = self.lines.pick("missing" if self.usage.missing else "usage", values)
+        info = self.lines.pick("missing", values) if self.usage.missing else None
         self.say("\n".join(s for s in (hello, info) if s))
 
     def wake_up(self) -> None:
