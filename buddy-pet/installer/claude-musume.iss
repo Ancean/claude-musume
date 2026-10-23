@@ -78,3 +78,13 @@ begin
   StopRunning();
   Result := True;
 end;
+
+// 菜单里“开机自动启动”登记的那一项是桌宠自己写的（见 autostart.py），卸载时一并删掉。
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usPostUninstall then
+  begin
+    RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'ClaudeBuddyPetAutostart');
+    RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run', 'ClaudeBuddyPetAutostart');
+  end;
+end;

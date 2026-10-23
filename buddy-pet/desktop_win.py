@@ -23,6 +23,9 @@ MONITOR_DEFAULTTONEAREST = 2
 # SHQueryUserNotificationState 的结果：有全屏程序、Direct3D 独占全屏、演示模式。
 # 这几种情况下 Windows 自己也会暂停弹通知。
 FULLSCREEN_STATES = {2, 3, 4}
+QUNS_BUSY = 2
+# 桌面本身的窗口，盖满整块屏幕但不是全屏程序。
+DESKTOP_CLASSES = {"Progman", "WorkerW"}
 
 if sys.platform == "win32":
     user32 = ctypes.WinDLL("user32", use_last_error=True)
@@ -51,8 +54,20 @@ if sys.platform == "win32":
     user32.GetForegroundWindow.restype = wintypes.HWND
     user32.MonitorFromWindow.argtypes = [wintypes.HWND, wintypes.DWORD]
     user32.MonitorFromWindow.restype = wintypes.HANDLE
+    user32.GetMonitorInfoW.argtypes = [wintypes.HANDLE, ctypes.c_void_p]
+    user32.GetMonitorInfoW.restype = wintypes.BOOL
+    user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user32.GetWindowRect.restype = wintypes.BOOL
+    user32.IsZoomed.argtypes = [wintypes.HWND]
+    user32.IsZoomed.restype = wintypes.BOOL
+    user32.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.GetClassNameW.restype = ctypes.c_int
     shell32.SHQueryUserNotificationState.argtypes = [ctypes.POINTER(ctypes.c_int)]
     shell32.SHQueryUserNotificationState.restype = ctypes.c_long
+
+
+class MONITORINFO(ctypes.Structure):
+    _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT), ("dwFlags", wintypes.DWORD)]
 
 
 def buried(hwnd: int) -> bool:
@@ -77,7 +92,11 @@ def raise_topmost(hwnd: int) -> None:
 
 
 def fullscreen_app(near: int) -> bool:
-    """前台有全屏程序（看视频、玩游戏、放幻灯片），而且和 near 这个窗口在同一块屏幕上。"""
+    """前台有全屏程序（看视频、玩游戏、放幻灯片），而且和 near 这个窗口在同一块屏幕上。
+
+    Windows 报“有全屏程序”时不一定真有：有的电脑上普通的最大化窗口在前台也一直这么报，
+    她就一出来就躲着。所以这种情况还要看前台窗口是不是真的盖满了整块屏幕。
+    """
     if sys.platform != "win32":
         return False
     state = ctypes.c_int()
@@ -87,7 +106,27 @@ def fullscreen_app(near: int) -> bool:
     if not fg:
         return True
     here = user32.MonitorFromWindow(near, MONITOR_DEFAULTTONEAREST)
-    return user32.MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST) == here
+    monitor = user32.MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST)
+    if monitor != here:
+        return False
+    return state.value != QUNS_BUSY or covers_monitor(fg, monitor)
+
+
+def covers_monitor(hwnd: int, monitor: int) -> bool:
+    """窗口盖满了整块屏幕，连任务栏也盖住。最大化的窗口和桌面不算。"""
+    if user32.IsZoomed(hwnd):
+        return False
+    cls = ctypes.create_unicode_buffer(64)
+    user32.GetClassNameW(hwnd, cls, 64)
+    if cls.value in DESKTOP_CLASSES:
+        return False
+    info = MONITORINFO()
+    info.cbSize = ctypes.sizeof(MONITORINFO)
+    rect = wintypes.RECT()
+    if not user32.GetMonitorInfoW(monitor, ctypes.byref(info)) or not user32.GetWindowRect(hwnd, ctypes.byref(rect)):
+        return True  # 量不出来时照旧相信 Windows 的判断
+    m = info.rcMonitor
+    return rect.left <= m.left and rect.top <= m.top and rect.right >= m.right and rect.bottom >= m.bottom
 
 
 def set_click_through(hwnd: int, on: bool) -> None:

@@ -12,7 +12,7 @@ Claude Code 插件 claude-buddy-bridge 写的会话文件。装了插件，重�
 置顶：Windows 偶尔会把置顶窗口排到普通窗口下面，她每 1.5 秒检查一次，被压住就回到最上层；前台有全屏程序时先躲起来。
 鼠标穿透：打开后点击直接落到她下面的窗口，按住 Ctrl 时才能点她、拖她、右键她。
 
-操作：左键点她互动，按住拖动换位置，鼠标停在额度卡片上看文字详情，右键打开菜单（台词在“管理台词”里改）。
+操作：左键点她互动，Shift 加左键叫出 Claude 桌面端，按住拖动换位置，鼠标停在额度卡片上看文字详情，右键打开菜单（台词在“管理台词”里改）。
 运行：pythonw pet.pyw    已经有一只在运行时，新的直接退出
 自检：python pet.pyw --snapshot 目录    把几种状态渲染成 PNG 后退出，不显示窗口
 打包：python build.py    生成 dist\\Claude娘 和安装程序，见 README
@@ -53,12 +53,13 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import QActionGroup, QApplication, QFileDialog, QMenu, QMessageBox, QSystemTrayIcon, QToolTip, QWidget
 
+import autostart
 import desktop_win
 import line_tags
 import sounds
 from art import Art
 from bubble import BARS, BORDER, FAINT, LABEL, SEP, TONES, WINDOW_FLAGS, Bubble, draw_bar, font, soft_shadow
-from claude_app import claude_foreground, claude_open
+from claude_app import claude_foreground, claude_open, show_claude
 from edge_dock import EdgeDock
 from snapshot import snapshot
 from usage_data import (
@@ -1668,6 +1669,12 @@ class Pet(QWidget, EdgeDock):
         self.add_toggle(settings, "sleep", "没人理时打瞌睡")
         self.add_toggle(settings, "watch", "感知 Claude Code 工作状态")
         self.add_toggle(settings, "follow", "跟随 Claude 启动和退出")
+        if autostart.available():
+            # 开没开以注册表为准，不存在 config.json 里：在任务管理器里改过也能对上。
+            act = settings.addAction("开机自动启动")
+            act.setCheckable(True)
+            act.setChecked(autostart.enabled())
+            act.toggled.connect(self.set_autostart)
         settings.addSeparator()
         self.add_plugin_menu(settings)
         menu.addSeparator()
@@ -1709,6 +1716,14 @@ class Pet(QWidget, EdgeDock):
             sub.addAction("安装" if state == "missing" else "更新", self.install_plugin_clicked)
         if PLUGIN_DST.is_dir():
             sub.addAction("打开安装位置", lambda: self.open_folder(PLUGIN_DST, create=False))
+
+    def set_autostart(self, on: bool) -> None:
+        try:
+            autostart.set_enabled(on, Path(__file__).resolve())
+        except OSError as err:
+            self.say(f"开机启动没设置成功：{err}", 9.0)
+            return
+        self.say("好，以后开机我就出来" if on else "好，开机时我不自己出来了")
 
     def install_plugin_clicked(self) -> None:
         message = install_plugin()
@@ -1855,7 +1870,10 @@ class Pet(QWidget, EdgeDock):
             if random.random() < 0.3:
                 self.say_kind("drop")
         elif self.on_body(e.pos()):
-            self.poke(now)
+            if e.modifiers() & Qt.ShiftModifier:
+                self.call_claude(now)
+            else:
+                self.poke(now)
         else:
             self.motion.release(now)
             if self.on_card(e.pos()) and self.cfg["card"] != "detail":
@@ -1885,6 +1903,13 @@ class Pet(QWidget, EdgeDock):
             self.say_kind("usage")
         else:
             self.say_kind("click")
+
+    def call_claude(self, now: float) -> None:
+        """Shift 加左键点她：把 Claude 桌面端叫到前台，没开就打开它。"""
+        self.touch()
+        self.motion.release(now)
+        if not show_claude():
+            self.say("没找到 Claude 桌面端，装好了吗？")
 
     def event(self, e) -> bool:
         if e.type() == QEvent.ToolTip:
