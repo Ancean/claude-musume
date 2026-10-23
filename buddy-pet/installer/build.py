@@ -28,10 +28,14 @@ ART_FILES = ("*.png", "anchors.json", "weights.json")
 # Anaconda 里装了很多库，PyInstaller 会顺着可选导入把它们带进来；桌宠只用 PyQt5、Pillow 和标准库。
 EXCLUDES = ("numpy", "pandas", "scipy", "matplotlib", "IPython", "jedi", "tkinter", "sqlite3", "PyQt5.QtWebEngineWidgets",
             "PyQt5.QtWebEngineCore", "PyQt5.QtQml", "PyQt5.QtQuick", "PyQt5.QtMultimedia", "PyQt5.QtSql", "PyQt5.QtNetwork")
-# 打包后删掉的文件（相对 _internal 和其中的 Qt 插件目录）。
+# 打包后删掉的文件（相对 _internal、Qt 的 bin 目录和 Qt 插件目录）。Anaconda 的 Qt 把 DLL 放在 _internal 下、
+# 名字带 _conda；pip 装的 PyQt5 放在 PyQt5/Qt5/bin 下、不带后缀，两套名字都要写。
 PRUNE = ("opengl32sw.dll", "libGLESv2.dll", "libEGL.dll", "d3dcompiler_*.dll", "Qt5Pdf_conda.dll", "Qt5Qml*_conda.dll",
          "Qt5Quick*_conda.dll", "Qt5VirtualKeyboard_conda.dll", "imageformats/qpdf*.dll", "platforminputcontexts",
-         "PyQt5/Qt5/translations", "PIL/_avif*.pyd")
+         "PyQt5/Qt5/translations", "PIL/_avif*.pyd",
+         # pip 版：QML、WebGL 平台插件和它要的网络库，Linux 用的桌面门户和 DBus，通过网络收触摸信号的插件。
+         "Qt5Quick.dll", "Qt5Qml.dll", "Qt5QmlModels.dll", "Qt5WebSockets.dll", "Qt5Network.dll", "Qt5DBus.dll",
+         "platforms/qwebgl.dll", "platformthemes/qxdgdesktopportal.dll", "generic/qtuiotouchplugin.dll")
 
 
 def make_icon() -> Path:
@@ -79,11 +83,11 @@ def pyinstaller(icon: Path) -> Path:
 
 
 def prune(app: Path) -> None:
-    """Anaconda 的 Qt 插件会拖进 PDF、QML、虚拟键盘和软件 OpenGL，桌宠只用 QPainter 画 PNG，删掉省一半体积。"""
+    """Qt 会拖进 PDF、QML、虚拟键盘和软件 OpenGL，桌宠只用 QPainter 画 PNG，删掉能省三四十 MB。"""
     internal = app / "_internal"
-    plugins = internal / "PyQt5" / "Qt5" / "plugins"
+    qt = internal / "PyQt5" / "Qt5"
     for pattern in PRUNE:
-        for path in [*internal.glob(pattern), *plugins.glob(pattern)]:
+        for path in [*internal.glob(pattern), *(qt / "bin").glob(pattern), *(qt / "plugins").glob(pattern)]:
             if path.is_dir():
                 shutil.rmtree(path)
             else:
