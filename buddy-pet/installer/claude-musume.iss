@@ -36,8 +36,8 @@ Name: "desktopicon"; Description: "在桌面创建快捷方式"; GroupDescriptio
 
 [Files]
 Source: "{#AppDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; 给 Claude Code 的插件：把额度、上下文、花费和任务进度实时写给她。
-Source: "{#PluginDir}\*"; DestDir: "{%USERPROFILE}\.claude\skills\claude-buddy-bridge"; Flags: ignoreversion recursesubdirs createallsubdirs
+; 给 Claude Code 的插件：把额度、上下文、花费和任务进度实时写给她。改名前的旧插件 claude-buddy-bridge 由她启动时删掉（见 pet.pyw）。
+Source: "{#PluginDir}\*"; DestDir: "{%USERPROFILE}\.claude\skills\musume-bridge"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#ExeName}"

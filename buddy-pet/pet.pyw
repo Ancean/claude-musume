@@ -1,7 +1,7 @@
 """Claude娘：显示 Claude 额度的桌面宠物。
 
 额度有两个来源，谁新用谁（见 usage_data.py）：Claude 桌面端约每 15 分钟写一次的额度历史，以及
-Claude Code 插件 claude-buddy-bridge 写的会话文件。装了插件，重置时间是准确的，还能看到上下文 token
+Claude Code 插件 musume-bridge 写的会话文件。装了插件，重置时间是准确的，还能看到上下文 token
 和本会话花费，Claude Code 做完一个任务时她会提醒；没装时重置时间按历史推算，标“约”。都不涉及登录凭据。
 
 角色图在 buddy-art 文件夹：idle.png 必需；blink、happy、worried、working 和 drag、sleep、wave、cheer、pout
@@ -25,6 +25,7 @@ import json
 import math
 import os
 import random
+import shutil
 import stat
 import sys
 import tempfile
@@ -94,8 +95,11 @@ PROJECTS_DIR = Path.home() / ".claude" / "projects"
 # 插件写数据的位置是固定的，和桌宠装在哪里、是不是打包成 exe 无关，见 claude-plugin/hooks/register.ts。
 LIVE_DIR = Path.home() / ".claude" / "buddy-pet" / "live"
 PLUGIN_SRC = BUNDLE / "claude-plugin"
-PLUGIN_DST = Path.home() / ".claude" / "skills" / "claude-buddy-bridge"
+PLUGIN_DST = Path.home() / ".claude" / "skills" / "musume-bridge"
 PLUGIN_FILES = (".claude-plugin/plugin.json", "hooks/hooks.json", "hooks/register.ts")
+# 插件 0.1 版叫 claude-buddy-bridge；Claude Code 后来把 claude- 开头的名字留给官方插件，就改了名。
+# 新插件装好后删掉同一个 skills 文件夹里的旧文件夹，免得两份同时加载。
+OLD_PLUGIN = "claude-buddy-bridge"
 CONFIG_FILE = HERE / "config.json"
 LINES_FILE = HERE / "lines.json"
 MET_FILE = HERE / "met.json"  # 今天说过哪些见面台词
@@ -575,8 +579,28 @@ def install_plugin(src: Path = PLUGIN_SRC, dst: Path = PLUGIN_DST) -> str:
             os.replace(tmp, target)
     except OSError as err:
         return f"安装失败：{err}"
+    remove_old_plugin(src, dst)
     done = "更新好了" if state == "outdated" else "装好了"
     return f"插件{done}。之后新开的 Claude Code 会话会加载它，额度、上下文和任务进度就会实时同步过来。"
+
+
+def remove_old_plugin(src: Path = PLUGIN_SRC, dst: Path = PLUGIN_DST) -> bool:
+    """新插件已经装好时，删掉它旁边改名前的旧插件文件夹。只删认得出是旧版这个插件的文件夹，是链接时不动。"""
+    old = dst.parent / OLD_PLUGIN
+    if plugin_status(src, dst) != "current" or is_link(old) or is_link(old.parent):
+        return False
+    try:
+        data = json.loads((old / PLUGIN_FILES[0]).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(data, dict) or data.get("name") != OLD_PLUGIN:
+        return False
+    try:
+        shutil.rmtree(old)
+    except OSError:
+        log_current()
+        return False
+    return True
 
 
 # ---------- 动作 ----------
@@ -2315,6 +2339,7 @@ def main() -> int:
         result = install_plugin()
         if not result.startswith("插件"):
             log_exception(RuntimeError, RuntimeError(result), None)
+    remove_old_plugin()
     pet = Pet(cfg, art, lines)
     pet.show()
     return app.exec_()

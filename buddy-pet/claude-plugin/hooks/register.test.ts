@@ -1,18 +1,29 @@
+import type { On } from 'claude-code'
 import { expect, mock, test } from 'claude-code/testing'
 
 const HOME = 'C:\\Users\\tester'
-const FILE = `${HOME}\\.claude\\buddy-pet\\live\\s1.json`
 const T0 = 1_700_000_000_000
+
+// 引擎会把不是绝对路径的写入位置拼到当前目录后面：在 Linux 上跑时 C:\Users\tester 就是这样。
+// 所以只比路径的最后几段，在 Windows 和别的系统上都能对上。
+const tail = (path: string) => path.split(/[\\/]+/).slice(-5).join('/')
+const FILE = 'tester/.claude/buddy-pet/live/s1.json'
+
+function record(on: On): Map<string, string> {
+  const files = new Map<string, string>()
+  on('fs.write', (_$, e) => {
+    files.set(tail(e.path), e.text)
+
+    return { value: undefined }
+  })
+
+  return files
+}
 
 test('会话文件跟着额度、回合和心跳更新', async ($, on) => {
   const clock = mock.clock(on, { now: T0 })
   mock.env(on, { USERPROFILE: HOME })
-  const files = new Map<string, string>()
-  on('fs.write', (_$, e) => {
-    files.set(e.path, e.text)
-
-    return { value: undefined }
-  })
+  const files = record(on)
   on('session.id', () => ({ value: 's1' }))
   on('session.usage', () => ({ value: { startedAt: T0 - 60_000, context: { window: 200_000 }, rateLimits: [] } }))
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
@@ -70,6 +81,41 @@ test('会话文件跟着额度、回合和心跳更新', async ($, on) => {
   expect(files.get(FILE)).not.toContain('好了')
 })
 
+// 开一个会话再关掉，返回插件写过的路径。
+function written(on: On, env: Record<string, string>): string[] {
+  mock.clock(on, { now: T0 })
+  mock.env(on, env)
+  const paths: string[] = []
+  on('fs.write', (_$, e) => {
+    paths.push(e.path)
+
+    return { value: undefined }
+  })
+  on('session.id', () => ({ value: 's1' }))
+  on('session.usage', () => ({ value: { startedAt: T0, context: { window: 200_000 }, rateLimits: [] } }))
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('session.end', (_$, e) => ({ sessionId: e.sessionId }))
+
+  return paths
+}
+
+// Windows 上桌宠按 USERPROFILE 找；Git Bash 之类的环境里 HOME 也有值，但不一定是同一个地方。
+test('有 USERPROFILE 时用它，不用 HOME', async ($, on) => {
+  const paths = written(on, { USERPROFILE: HOME, HOME: '/c/Users/other' })
+  await $.session.start({ cwd: 'D:\\proj', surface: null, isInteractive: false })
+  await $.session.end({ reason: 'other', sessionId: 's1', resume: { id: 's1' } })
+  expect(paths.length).toBeGreaterThan(0)
+  expect(paths.every(p => tail(p) === FILE && p.endsWith('\\live\\s1.json'))).toBe(true)
+})
+
+test('没有 USERPROFILE 时用 HOME（macOS、Linux）', async ($, on) => {
+  const paths = written(on, { HOME: '/home/mika/' })
+  await $.session.start({ cwd: '/proj', surface: null, isInteractive: false })
+  await $.session.end({ reason: 'other', sessionId: 's1', resume: { id: 's1' } })
+  expect(paths.length).toBeGreaterThan(0)
+  expect(paths.every(p => tail(p) === 'mika/.claude/buddy-pet/live/s1.json')).toBe(true)
+})
+
 test('写不进去时只提示一次', async ($, on) => {
   mock.clock(on, { now: T0 })
   mock.env(on, { USERPROFILE: HOME })
@@ -90,5 +136,5 @@ test('写不进去时只提示一次', async ($, on) => {
   await $.turn.start({ text: '', turnId: 't1' })
   await $.session.end({ reason: 'other', sessionId: 's1', resume: { id: 's1' } })
   expect(toasts).toHaveLength(1)
-  expect(toasts[0]).toContain('claude-buddy-bridge')
+  expect(toasts[0]).toContain('musume-bridge')
 })

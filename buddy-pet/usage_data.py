@@ -3,7 +3,7 @@
 两个来源，谁的读数新用谁：
 - %APPDATA%\\Claude\\plan-usage-history.json：桌面端约每 15 分钟写一次 5 小时与 7 天额度的已用百分比，
   里面没有重置时间，重置时间由这份历史推算，显示时标“约”。
-- %USERPROFILE%\\.claude\\buddy-pet\\live\\<会话 id>.json：插件 claude-buddy-bridge 写的，每个 Claude Code
+- %USERPROFILE%\\.claude\\buddy-pet\\live\\<会话 id>.json：插件 musume-bridge 写的，每个 Claude Code
   会话一个文件，有准确的重置时间、上下文 token、本会话花费和任务的起止时间，额度每变动一个百分点更新一次。
 两边都不涉及登录凭据。只用标准库。
 """
