@@ -6,7 +6,7 @@
 
 ## 安装
 
-普通用户用安装程序 `Claude娘-安装程序.exe`（按下文“打包”自己生成，或者向作者要）。它装在当前用户的 `%LOCALAPPDATA%\Programs\Claude娘`，不需要管理员权限，会同时：
+普通用户用安装程序：在 GitHub 的 [Releases](https://github.com/Ancean/claude-musume/releases) 里下载 `claude-musume-setup-版本号.exe`，或者按下文“打包”自己生成。Windows 第一次运行它可能弹出蓝色的“已保护你的电脑”，点“更多信息”再点“仍要运行”。它装在当前用户的 `%LOCALAPPDATA%\Programs\Claude娘`，不需要管理员权限，会同时：
 
 - 把 Claude Code 插件装到 `%USERPROFILE%\.claude\skills\musume-bridge`；
 - 在开始菜单建快捷方式，可选桌面快捷方式；
@@ -96,7 +96,7 @@
 
 提示音是程序合成的木琴一样的柔和音色，每个音都有一点渐起，不会突然一响：点她是五声音阶里的单音，任务完成是轻轻的“叮咚”，额度重置是上行的琶音，额度告急是两个往下走的低音。音量在“设置 › 提示音 › 音量”里分小声、适中、大声三档，“试听”可以逐个听。
 
-一轮回复完成时的任务结束音在“设置 › 提示音 › 任务结束音”里选：默认是 Minecraft 的经验球音效，另一个预设是 A，也可以选回合成的“叮咚”、自选一个 wav 文件，或者选一个文件夹当音效组，每次从里面随机放一个。选中后马上试听一次。自选文件只认 wav（Windows 自带的播放只支持 PCM 格式的 wav），放不了的文件会被跳过，全都放不了时退回经验球；没有截取片段的功能，想要某一段请先用别的工具剪好。两个预设放在 `sound-presets` 文件夹，来自 [DeepSeek-Balance-Whale-Widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) 桌宠项目（MeteorNOX，MIT 许可）。经验球音效版权属于 Mojang，所以源码仓库里不带 `minecraft-exp-orb.wav`，这时默认的任务结束音是音效 A；想要经验球的话自己把同名 wav 放进 `sound-presets` 即可。
+一轮回复完成时的任务结束音在“设置 › 提示音 › 任务结束音”里选：默认是 Minecraft 的经验球音效，另一个预设是 A，也可以选回合成的“叮咚”、自选一个 wav 文件，或者选一个文件夹当音效组，每次从里面随机放一个。选中后马上试听一次。自选文件只认 wav（Windows 自带的播放只支持 PCM 格式的 wav），放不了的文件会被跳过，全都放不了时退回经验球；没有截取片段的功能，想要某一段请先用别的工具剪好。两个预设放在 `sound-presets` 文件夹，来自 [DeepSeek-Balance-Whale-Widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) 桌宠项目（MeteorNOX，MIT 许可）。经验球音效版权属于 Mojang，所以源码仓库和 GitHub 自动打包的安装程序里都不带 `minecraft-exp-orb.wav`，这时默认的任务结束音是音效 A；想要经验球的话自己把同名 wav 放进 `sound-presets` 即可。
 
 想换掉其他提示音，把 wav 文件放进 `sounds\自定义`（菜单里“打开自定义声音文件夹”可以直接打开），文件名用 `done.wav`（任务完成，只在任务结束音选“叮咚”时用）、`chime.wav`（额度重置）、`warn.wav`（额度告急）或 `pat.wav`（点她）；也可以用 `pat1.wav` 到 `pat5.wav` 分别替换连点时的五个音。不放就用合成的。
 
@@ -161,6 +161,7 @@
 | `config.json` | 位置、大小和各项开关，自动生成；删掉即恢复默认 |
 | `sounds\` | 合成的音效，缺了或换了音量会自动重新生成；`sounds\自定义` 放自己的声音 |
 | `pet.log`、`follow.log` | 只在出错时写入 |
+| `tests\` | 自动测试，见“依赖” |
 
 ## 跟随 Claude 启动和退出
 
@@ -188,9 +189,13 @@ Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' 
 
 打包后的程序把设置、台词、声音和日志写在 exe 旁边，所以装在用户自己的文件夹里；角色图先找 exe 旁边的 `buddy-art`（方便换图），找不到再用打包进去的。打包版没有带 numpy 和 scipy，换进去的角色图要是透明背景的 PNG。同一个 exe 带 `--follow` 参数时只当哨兵。插件写数据的位置不受影响。
 
+也可以让 GitHub 替你打包：在仓库网页的 Actions › 发布新版本 › Run workflow 里填版本号（比如 `1.1.0`），或者推送一个 `v1.1.0` 这样的标签。它在 GitHub 的 Windows 机器上跑 `build.py --version 版本号`，建一个草稿版本，把 `claude-musume-setup-版本号.exe` 放进去。草稿只有你看得到，下载下来装一遍确认没问题，再在 Releases 页面点“发布”。这样打出来的安装程序不带经验球音效。
+
 ## 依赖
 
 Python 3、PyQt5 和 Pillow；角色图没有透明背景时还会用到 numpy 和 scipy。`follow_claude.pyw`、`claude_app.py`、`desktop_win.py`、`usage_data.py` 和 `sounds.py` 只用标准库。`python pet.pyw --snapshot 目录` 可以把各种状态渲染成 PNG 检查画面，不显示窗口；`python claude_app.py` 可以查看当前是否认出了 Claude 的窗口。
+
+自动测试在 `tests` 文件夹，在 `buddy-pet` 里运行 `python -m unittest discover -s tests`，只用标准库，装了 PyQt5 时还会测插件的安装和更新；插件自己的测试用 `claude plugin test claude-plugin`。每次推送到 GitHub 都会自动跑这些测试、检查插件，再把各种状态渲染成图片、在 Windows 上打一次包，结果在仓库的 Actions 页面里，图片和安装程序可以从那里下载。每周一也会跑一次，Claude Code 的插件接口有变动时能早点发现。
 
 ## 致谢与许可
 

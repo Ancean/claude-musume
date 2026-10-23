@@ -1,7 +1,7 @@
 """打包：PyInstaller 生成 dist\\Claude娘 文件夹，再用 Inno Setup 做成 dist\\Claude娘-安装程序.exe。
 
 需要：pip install pyinstaller pillow；Inno Setup 6（https://jrsoftware.org/isdl.php，装在当前用户或系统都行）。
-运行：python installer\\build.py        只要文件夹不要安装程序时加 --no-installer
+运行：python installer\\build.py        只要文件夹不要安装程序时加 --no-installer，指定版本号加 --version 1.2.0
 sound-presets 里没有 minecraft-exp-orb.wav 也能打包，任务结束音会退回音效 A。
 """
 
@@ -21,7 +21,7 @@ ART = PET.parent / "buddy-art"
 BUILD = PET / "build"
 DIST = PET / "dist"
 NAME = "Claude娘"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 # Inno Setup 6 自带的语言里没有简体中文，用官方仓库里和 6.7.3 同一版本的非官方翻译。
 CHINESE_ISL = "https://raw.githubusercontent.com/jrsoftware/issrc/is-6_7_3/Files/Languages/Unofficial/ChineseSimplified.isl"
 ART_FILES = ("*.png", "anchors.json", "weights.json")
@@ -103,11 +103,11 @@ def iscc() -> Path:
     return Path(found)
 
 
-def installer(app: Path, icon: Path) -> Path:
+def installer(app: Path, icon: Path, version: str) -> Path:
     isl = BUILD / "ChineseSimplified.isl"
     if not isl.exists():
         urllib.request.urlretrieve(CHINESE_ISL, isl)
-    defines = {"AppName": NAME, "AppVersion": VERSION, "AppDir": app, "PluginDir": BUILD / "data" / "claude-plugin",
+    defines = {"AppName": NAME, "AppVersion": version, "AppDir": app, "PluginDir": BUILD / "data" / "claude-plugin",
                "IconFile": icon, "ChineseIsl": isl, "OutDir": DIST}
     cmd = [str(iscc()), *(f"/D{k}={v}" for k, v in defines.items()), str(HERE / "claude-musume.iss")]
     subprocess.run(cmd, check=True)
@@ -117,6 +117,7 @@ def installer(app: Path, icon: Path) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description="把桌宠打包成 exe 和安装程序")
     parser.add_argument("--no-installer", action="store_true", help="只生成 dist\\Claude娘 文件夹")
+    parser.add_argument("--version", default=VERSION, help=f"安装程序的版本号，默认 {VERSION}")
     args = parser.parse_args()
     BUILD.mkdir(exist_ok=True)
     if not (PET / "sound-presets" / "minecraft-exp-orb.wav").exists():
@@ -125,7 +126,7 @@ def main() -> int:
     app = pyinstaller(icon)
     print(f"程序文件夹：{app}")
     if not args.no_installer:
-        print(f"安装程序：{installer(app, icon)}")
+        print(f"安装程序：{installer(app, icon, args.version)}")
     return 0
 
 

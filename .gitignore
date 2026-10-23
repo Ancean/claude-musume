@@ -5,6 +5,7 @@
 !/README.md
 !/buddy-pet/
 !/buddy-art/
+!/.github/
 
 # 运行时生成、每个人自己的文件
 buddy-pet/config.json
