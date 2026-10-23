@@ -188,6 +188,7 @@ class PluginFolder(unittest.TestCase):
         return path
 
     def test_reading_current_and_cleanup(self):
+        # 插件写的是毫秒，读回来换算成秒，小数点后最后几位会有一点误差，所以下面比较时留 0.01 秒的余地。
         now = time.time()
         self.put("old.json", live_file("old", now - 60, limitsAt=(now - 600) * 1000))
         self.put("new.json", live_file("new", now - 5))
@@ -200,11 +201,11 @@ class PluginFolder(unittest.TestCase):
         self.assertFalse(self.reader.poll(now))  # 没改动就不重新解析
 
         _, at = self.reader.reading()
-        self.assertAlmostEqual(at, now - 5)  # 额度看读数最新的那个会话
-        self.assertAlmostEqual(self.reader.current(now, "old").updated, now - 60)
+        self.assertAlmostEqual(at, now - 5, delta=0.01)  # 额度看读数最新的那个会话
+        self.assertAlmostEqual(self.reader.current(now, "old").updated, now - 60, delta=0.01)
         # 最近有动静的会话没有插件数据：不拿别的会话顶替。
         self.assertIsNone(self.reader.current(now, "unknown"))
-        self.assertAlmostEqual(self.reader.current(now).updated, now - 5)
+        self.assertAlmostEqual(self.reader.current(now).updated, now - 5, delta=0.01)
         self.assertTrue(self.reader.busy(now))
 
         (self.folder / "new.json").unlink()
